@@ -8,16 +8,20 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 import com.example.sroyals.databinding.ActivityWishingScreenBinding;
 
@@ -59,45 +63,31 @@ public class WishingScreen extends AppCompatActivity {
             public void onClick(View v) {
                 //Share the Image
                 Bitmap image = getBitmapFromView(binding.finalImage);
-                shareImageAndText(image);
+                try {
+                    shareImageAndText(image);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
 
-    private void shareImageAndText(Bitmap image) {
-        Uri uri = getImageToShare(image);
-        Intent intent = new Intent(Intent.ACTION_SEND);
+    private void shareImageAndText(Bitmap image) throws IOException {
 
-        //putting the uri of image to be shared
-        intent.putExtra(Intent.EXTRA_STREAM,uri);
-
-        //Add the message of happy birthday
-        intent.putExtra(Intent.EXTRA_TEXT,msg );
-
-        //setting type of image
-        intent.setType("image/png");
-
-        //calling startActivity to share
-        startActivity(Intent.createChooser(intent, "Share Image Via:"));
-    }
-
-    private Uri getImageToShare(Bitmap image) {
-        File imageFolder = new File(getCacheDir(), "images");
-        Uri uri = null;
-        try{
-
-            imageFolder.mkdirs();
-            File file = new File(imageFolder, "birthday_image.png");
-            FileOutputStream outputStream = new FileOutputStream(file);
-            image.compress(Bitmap.CompressFormat.PNG,100,outputStream);
-            outputStream.flush();
-            outputStream.close();
-            uri = FileProvider.getUriForFile(this,"com.rishav.shareImage.fileProvider",file);
-
-        }catch (Exception e){
-            Toast.makeText(this, "" + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-        return uri;
+        StrictMode.VmPolicy.Builder builder=new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
+        Bitmap bitmap=image;
+        File f=new File(getExternalCacheDir()+"/"+"Meme app"+".png");
+        Intent shareimage=new Intent(Intent.ACTION_SEND);
+        FileOutputStream outputStream =new FileOutputStream(f);
+        bitmap.compress(Bitmap.CompressFormat.PNG,100,outputStream);
+        outputStream.flush();
+        outputStream.close();
+        shareimage.setType("image/*");
+        shareimage.putExtra(Intent.EXTRA_TEXT,"Hey check out this cool meme.");
+        shareimage.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
+        shareimage.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(shareimage);
     }
 
     private Bitmap getBitmapFromView(View view) {
